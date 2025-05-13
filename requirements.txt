@@ -7,5 +7,5 @@ streamlit
 sounddevice
 soundfile
 matplotlib
-seaborn 
+seaborn
 gradio
