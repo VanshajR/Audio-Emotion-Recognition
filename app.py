@@ -58,7 +58,7 @@ st.set_page_config(
 audio_processor = AudioProcessor()
 
 def plot_waveform(audio, sr):
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(8, 3))  # Reduced size
     librosa.display.waveshow(audio, sr=sr)
     plt.title('Audio Waveform')
     plt.xlabel('Time')
@@ -66,7 +66,7 @@ def plot_waveform(audio, sr):
     return plt
 
 def plot_spectrogram(audio, sr):
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(8, 3))  # Reduced size
     D = librosa.amplitude_to_db(np.abs(librosa.stft(audio)), ref=np.max)
     librosa.display.specshow(D, sr=sr, x_axis='time', y_axis='log')
     plt.colorbar(format='%+2.0f dB')
@@ -95,39 +95,39 @@ def display_results(audio_path):
         audio, features = audio_processor.process_audio_file(audio_path)
         
         if audio is not None and features is not None:
-            # Create placeholders for the plots
-            waveform_placeholder = st.empty()
-            spectrogram_placeholder = st.empty()
-            results_placeholder = st.empty()
-            
-            # Update plots
-            with waveform_placeholder:
-                st.pyplot(plot_waveform(audio, audio_processor.sample_rate))
-            with spectrogram_placeholder:
-                st.pyplot(plot_spectrogram(audio, audio_processor.sample_rate))
-            
             try:
                 # Show loading spinner while making predictions
                 with st.spinner('Making predictions...'):
                     emotion, confidence = predict_emotion(features)
                     probs = predict_proba(features)
                 
-                # Display results
-                with results_placeholder:
-                    st.success(f"Detected Emotion: {emotion.upper()}")
-                    st.info(f"Confidence: {confidence:.2%}")
-                    st.subheader("Emotion Probabilities")
-                    fig, ax = plt.subplots(figsize=(10, 4))
-                    emotions, probabilities = zip(*probs)
-                    ax.bar(emotions, probabilities)
-                    ax.set_title("Emotion Probability Distribution")
-                    ax.set_ylim(0, 1)
-                    plt.xticks(rotation=45)
-                    st.pyplot(fig)
+                # Display emotion result prominently
+                st.markdown("---")
+                st.markdown(f"## 🎯 Detected Emotion: {emotion.upper()}")
+                st.markdown(f"### Confidence: {confidence:.2%}")
+                st.markdown("---")
+                
+                # Create two columns for plots
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.pyplot(plot_waveform(audio, audio_processor.sample_rate))
+                with col2:
+                    st.pyplot(plot_spectrogram(audio, audio_processor.sample_rate))
+                
+                # Display probability distribution
+                st.subheader("Emotion Probability Distribution")
+                fig, ax = plt.subplots(figsize=(10, 3))  # Reduced height
+                emotions, probabilities = zip(*probs)
+                ax.bar(emotions, probabilities)
+                ax.set_title("Emotion Probability Distribution")
+                ax.set_ylim(0, 1)
+                plt.xticks(rotation=45)
+                st.pyplot(fig)
+                
             except Exception as e:
                 st.error(f"Prediction error: {e}")
         else:
             st.error("Error processing audio file. Please try again.")
 
 if __name__ == "__main__":
-    main()
+    main() 
