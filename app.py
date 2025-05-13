@@ -77,30 +77,17 @@ def main():
     st.title("🎵 Audio Emotion Recognition")
     st.write("Analyze emotions from speech using AI")
 
-    tab1, tab2 = st.tabs(["Record Audio", "Upload Audio"])
+    st.header("Upload Audio")
+    uploaded_file = st.file_uploader("Choose an audio file", type=['wav', 'mp3'])
 
-    with tab1:
-        st.header("Record Audio")
-        duration = st.slider("Recording Duration (seconds)", 1, 10, 3)
-        if st.button("Start Recording"):
-            with st.spinner(f"Recording for {duration} seconds..."):
-                audio, sr = audio_processor.record_audio(duration)
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-                    audio_processor.save_audio(audio, temp_file.name)
-                    audio_bytes = open(temp_file.name, 'rb').read()
-                    st.audio(audio_bytes, format='audio/wav')
-                    display_results(temp_file.name)
-                os.unlink(temp_file.name)
-
-    with tab2:
-        st.header("Upload Audio")
-        uploaded_file = st.file_uploader("Choose an audio file", type=['wav', 'mp3'])
-        if uploaded_file is not None:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-                temp_file.write(uploaded_file.getvalue())
-                st.audio(uploaded_file, format='audio/wav')
-                display_results(temp_file.name)
-            os.unlink(temp_file.name)
+    if uploaded_file is not None:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+            temp_file.write(uploaded_file.getvalue())
+            st.audio(uploaded_file, format='audio/wav')
+            display_results(temp_file.name)
+        os.unlink(temp_file.name)
+    else:
+        st.info("Please upload an audio file to analyze.")
 
 def display_results(audio_path):
     audio, features = audio_processor.process_audio_file(audio_path)
@@ -129,4 +116,4 @@ def display_results(audio_path):
         st.error("Error processing audio file. Please try again.")
 
 if __name__ == "__main__":
-    main()
+    main() 
