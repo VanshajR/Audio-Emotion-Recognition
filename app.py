@@ -9,6 +9,7 @@ from audio_processor import AudioProcessor
 import soundfile as sf
 import pickle
 from tensorflow.keras.models import load_model
+from pydub import AudioSegment
 
 # Paths to model and scaler
 MODEL_PATH = "models/emotion_model.h5"
@@ -73,19 +74,52 @@ def plot_spectrogram(audio, sr):
     plt.title('Spectrogram')
     return plt
 
+def convert_to_wav(input_file, output_path):
+    """Convert any audio file to WAV format."""
+    try:
+        audio = AudioSegment.from_file(input_file)
+        audio.export(output_path, format="wav")
+        return True
+    except Exception as e:
+        st.error(f"Error converting audio file: {e}")
+        return False
+
 def main():
     st.title("🎵 Audio Emotion Recognition")
     st.write("Analyze emotions from speech using AI")
 
     st.header("Upload Audio")
-    uploaded_file = st.file_uploader("Choose an audio file", type=['wav', 'mp3'])
+    uploaded_file = st.file_uploader("Choose an audio file", type=['wav', 'mp3', 'ogg', 'flac', 'm4a', 'aac'])
 
     if uploaded_file is not None:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            temp_file.write(uploaded_file.getvalue())
-            st.audio(uploaded_file, format='audio/wav')
-            display_results(temp_file.name)
-        os.unlink(temp_file.name)
+        # Create a temporary file for the uploaded audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_input:
+            temp_input.write(uploaded_file.getvalue())
+            temp_input_path = temp_input.name
+
+        # Create a temporary WAV file for processing
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_wav:
+            temp_wav_path = temp_wav.name
+
+        # Convert to WAV if needed
+        if uploaded_file.name.lower().endswith('.wav'):
+            temp_wav_path = temp_input_path
+        else:
+            if not convert_to_wav(temp_input_path, temp_wav_path):
+                st.error("Failed to convert audio file to WAV format.")
+                os.unlink(temp_input_path)
+                return
+
+        # Display the audio player
+        st.audio(uploaded_file, format='audio/wav')
+        
+        # Process the WAV file
+        display_results(temp_wav_path)
+        
+        # Clean up temporary files
+        os.unlink(temp_input_path)
+        if temp_wav_path != temp_input_path:
+            os.unlink(temp_wav_path)
     else:
         st.info("Please upload an audio file to analyze.")
 
